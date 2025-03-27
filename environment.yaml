@@ -10,9 +10,12 @@ dependencies:
   - pytorch-scatter
   - torchaudio
   - torchvision
-  - open3d
-  - pytorch=1.10
-  - cudatoolkit=11.3
+  - open3d-admin::open3d
+  - nvidia::cudatoolkit=11.3.1
+  - pytorch::pytorch=1.10.0
+  - pytorch::torchvision=0.11.0
+  - pytorch::torchaudio=0.10.0
+  - rusty1s::pytorch-scatter
   - tensorboard
   - scipy
   - opencv
@@ -20,3 +23,9 @@ dependencies:
   - suitesparse
   - matplotlib
   - pyyaml
+  - tqdm
+  
+  - suitesparse
+  - matplotlib
+  - pyyaml
+  - conda-forge::opencv
