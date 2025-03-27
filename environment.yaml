@@ -24,8 +24,4 @@ dependencies:
   - matplotlib
   - pyyaml
   - tqdm
-  
-  - suitesparse
-  - matplotlib
-  - pyyaml
   - conda-forge::opencv
