@@ -7,9 +7,6 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - pytorch-scatter
-  - torchaudio
-  - torchvision
   - open3d-admin::open3d
   - nvidia::cudatoolkit=11.3.1
   - pytorch::pytorch=1.10.0
