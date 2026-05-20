@@ -69,19 +69,24 @@ class PoseTrajectoryFiller:
         fmap = self.__feature_encoder(inputs)
 
         self.video.counter.value += M
-        self.video[N:N+M] = (tt, images[:,0], Gs.data, 1, None, intrinsics / 8.0, fmap)
+        self.video.red[N:N+M] = True
+        try:
+            self.video[N:N+M] = (
+                tt, images[:,0], Gs.data, 1, None, intrinsics / 8.0, fmap)
 
-        graph = FactorGraph(self.video, self.update)
-        graph.add_factors(t0.cuda(), torch.arange(N, N+M).cuda())
-        graph.add_factors(t1.cuda(), torch.arange(N, N+M).cuda())
+            graph = FactorGraph(self.video, self.update)
+            graph.add_factors(t0.cuda(), torch.arange(N, N+M).cuda())
+            graph.add_factors(t1.cuda(), torch.arange(N, N+M).cuda())
 
-        for itr in range(6):
-            graph.update(N, N+M, motion_only=True)
-    
-        Gs = SE3(self.video.poses[N:N+M].clone())
-        self.video.counter.value -= M
+            for itr in range(6):
+                graph.update(N, N+M, motion_only=True)
 
-        return [ Gs ]
+            Gs = SE3(self.video.poses[N:N+M].clone())
+        finally:
+            self.video.red[N:N+M] = False
+            self.video.counter.value -= M
+
+        return [Gs]
 
     @torch.no_grad()
     def __call__(self, image_stream):
@@ -108,4 +113,3 @@ class PoseTrajectoryFiller:
 
         # stitch pose segments together
         return lietorch.cat(pose_list, 0)
-
