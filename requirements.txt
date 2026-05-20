@@ -1,4 +1,7 @@
-torch
+# match the CUDA version with local environment
+--extra-index-url https://download.pytorch.org/whl/cu128
+
+torch==2.11.0+cu128
 torchvision
 torchaudio
 wheel
