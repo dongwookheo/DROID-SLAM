@@ -162,8 +162,11 @@ class DroidVisualizer(OrbitDragCameraWindow):
         cam_segments = CAM_SEGMENTS.astype("f4")
         cam_segments = np.tile(cam_segments, (n, 1))
 
+        trajectory_segments = np.zeros((max(1, 2 * (n - 1)), 3), dtype="f4")
 
         self.count = 0
+        self.trajectory_vertices = 0
+        self.hide_trajectory = False
 
         # Create a vertex array manually
         self.points = self.ctx.vertex_array(
@@ -176,10 +179,17 @@ class DroidVisualizer(OrbitDragCameraWindow):
         )
 
         self.cam_buffer = self.ctx.buffer(cam_segments.tobytes())
+        self.trajectory_buffer = self.ctx.buffer(trajectory_segments.tobytes())
         self.cams = self.ctx.vertex_array(
             self.cam_prog,
             [
                 (self.cam_buffer, "3f", "in_position"),
+            ],
+        )
+        self.trajectory = self.ctx.vertex_array(
+            self.cam_prog,
+            [
+                (self.trajectory_buffer, "3f", "in_position"),
             ],
         )
 
@@ -202,6 +212,11 @@ class DroidVisualizer(OrbitDragCameraWindow):
         t = self._depth_video1.counter.value
 
         if t > 12 and self.count % self._refresh_rate == 0:
+            self.hide_trajectory = torch.any(self._depth_video1.red[:t]).item()
+            if self._depth_video2 is not None:
+                t2 = self._depth_video2.counter.value
+                self.hide_trajectory |= torch.any(self._depth_video2.red[:t2]).item()
+
             images = self._depth_video1.images[:t, :, 4::8, 4::8]
             intrinsics = self._depth_video1.intrinsics
 
@@ -219,6 +234,18 @@ class DroidVisualizer(OrbitDragCameraWindow):
             cam_pts = cam_pts.reshape(-1, 3).cpu().numpy()
 
             self.cam_buffer.write(cam_pts)
+
+            if t >= 2 and not self.hide_trajectory:
+                centers = (
+                    SE3(poses).inv().matrix()[:, :3, 3].cpu().numpy().astype("f4")
+                )
+                trajectory_segments = np.empty((2 * (t - 1), 3), dtype="f4")
+                trajectory_segments[0::2] = centers[:-1]
+                trajectory_segments[1::2] = centers[1:]
+                self.trajectory_buffer.write(trajectory_segments.tobytes())
+                self.trajectory_vertices = len(trajectory_segments)
+            else:
+                self.trajectory_vertices = 0
 
             index = torch.arange(t, device="cuda")
             thresh = self._filter_threshold * torch.ones_like(disps.mean(dim=[1, 2]))
@@ -240,6 +267,12 @@ class DroidVisualizer(OrbitDragCameraWindow):
 
         self.count += 1
         self.points.render(mode=moderngl.POINTS)
+        self.cam_prog["color"].value = (1, 0, 0)
+        if self.trajectory_vertices > 0 and not self.hide_trajectory:
+            self.trajectory.render(
+                mode=moderngl.LINES, vertices=self.trajectory_vertices
+            )
+        self.cam_prog["color"].value = (0, 0, 0)
         self.cams.render(mode=moderngl.LINES)
 
 
