@@ -53,17 +53,19 @@ python3 -m venv .venv
 source .venv/bin/activate
 
 # install requirements (tested up to torch 2.7)
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 
 # optional (for visualization)
-pip install moderngl moderngl-window
+pip3 install moderngl moderngl-window
+pip3 install wheel ninja numpy "setuptools<82"
 
 # install third-party modules (this will take a while)
-pip install thirdparty/lietorch
-pip install thirdparty/pytorch_scatter
+pip3 install --no-build-isolation thirdparty/lietorch
+pip3 install --no-build-isolation thirdparty/pytorch_scatter
 
 # install droid-backends
-pip install -e .
+pip3 install -e .
+(or python3 -m pip install --no-build-isolation -e .)
 ```
 
 <!-- ### Deprecated Conda Installation
